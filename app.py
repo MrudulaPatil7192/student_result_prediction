@@ -5,37 +5,45 @@ import os
 
 app = Flask(__name__)
 
-# Safe model loading mechanism
+# Safe model loader targeting model.pkl in the same directory
 def load_model():
     base_path = os.path.dirname(__file__)
+    # Works for 'model.pkl' or 'model (2).pkl' if renamed to model.pkl
     file_path = os.path.join(base_path, "model.pkl")
+    if not os.path.exists(file_path):
+        # Fallback check for alternate file names
+        for f in os.listdir(base_path):
+            if f.endswith(".pkl"):
+                file_path = os.path.join(base_path, f)
+                break
     with open(file_path, "rb") as file:
         return pickle.load(file)
 
 try:
     model = load_model()
+    print("Model loaded successfully!")
 except Exception as e:
     model = None
     print(f"Error loading model binary: {e}")
 
-# Embedded HTML + CSS with Animations
+# Interactive Glassmorphic UI with Keyframe Animations & Live Result Rendering
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Performance Predictor</title>
+    <title>Student Performance Analytics</title>
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --border-color: rgba(255, 255, 255, 0.12);
-            --accent-blue: #6366f1;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-dark: #0b0f19;
+            --card-bg: rgba(23, 32, 54, 0.7);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --accent-glow: #6366f1;
+            --pass-green: #10b981;
+            --fail-red: #ef4444;
+            --text-light: #f8fafc;
+            --text-dim: #94a3b8;
         }
 
         * {
@@ -46,8 +54,8 @@ HTML_TEMPLATE = """
         }
 
         body {
-            background: var(--bg-gradient);
-            color: var(--text-main);
+            background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark));
+            color: var(--text-light);
             min-height: 100vh;
             padding: 30px 20px;
             display: flex;
@@ -55,28 +63,28 @@ HTML_TEMPLATE = """
             align-items: center;
         }
 
-        .container {
+        .dashboard-container {
             width: 100%;
             max-width: 1100px;
-            animation: fadeIn 0.8s ease-in-out;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .header {
+        .header-title {
             text-align: center;
             margin-bottom: 30px;
         }
 
-        .header h1 {
+        .header-title h1 {
             font-size: 2.2rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #818cf8, #c084fc);
+            font-weight: 800;
+            background: linear-gradient(90deg, #818cf8, #c084fc, #38bdf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        .header p {
-            color: var(--text-muted);
+        .header-title p {
+            color: var(--text-dim);
             font-size: 0.95rem;
         }
 
@@ -92,36 +100,38 @@ HTML_TEMPLATE = """
             }
         }
 
-        /* Glassmorphism Cards */
-        .glass-card {
+        .glass-panel {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--card-border);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, border-color 0.3s ease;
         }
 
-        .glass-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px 0 rgba(99, 102, 241, 0.15);
+        .glass-panel:hover {
+            border-color: rgba(99, 102, 241, 0.4);
         }
 
-        .card-title {
+        .panel-title {
             font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
             color: #e2e8f0;
-            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
             padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .form-grid {
+        .input-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 14px;
         }
 
         .form-group {
@@ -129,151 +139,151 @@ HTML_TEMPLATE = """
             flex-direction: column;
         }
 
-        .form-group.full-width {
+        .full-width {
             grid-column: span 2;
         }
 
         label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dim);
             margin-bottom: 6px;
-            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         input, select {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--border-color);
+            background: rgba(11, 15, 25, 0.8);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
-            padding: 10px 14px;
+            padding: 10px 12px;
             color: #ffffff;
             font-size: 0.9rem;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: all 0.2s ease;
         }
 
         input:focus, select:focus {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
 
-        /* Animated Submit Button */
-        .submit-btn {
+        .btn-submit {
             grid-column: span 2;
             margin-top: 10px;
-            padding: 12px;
-            background: linear-gradient(90deg, #4f46e5, #7c3aed);
-            color: white;
+            padding: 14px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            color: #ffffff;
             border: none;
             border-radius: 8px;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
 
-        .submit-btn:hover {
-            opacity: 0.95;
-            transform: scale(1.01);
-            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
         }
 
-        .submit-btn:active {
-            transform: scale(0.99);
+        .btn-submit:active {
+            transform: translateY(0);
         }
 
-        /* Results KPI Animated Tile */
-        .result-tile {
+        /* Result Display Tile */
+        .result-box {
             text-align: center;
-            padding: 30px 20px;
+            padding: 24px;
             border-radius: 12px;
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid var(--border-color);
-            animation: pulseGlow 2s infinite alternate;
+            background: rgba(11, 15, 25, 0.6);
+            border: 1px solid var(--card-border);
+            margin-bottom: 20px;
         }
 
-        .result-tile.pass {
-            border-left: 6px solid var(--accent-green);
+        .result-box.pass-style {
+            border-left: 6px solid var(--pass-green);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
         }
 
-        .result-tile.fail {
-            border-left: 6px solid var(--accent-red);
+        .result-box.fail-style {
+            border-left: 6px solid var(--fail-red);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
         }
 
-        .result-badge {
+        .badge-text {
             font-size: 2.2rem;
             font-weight: 800;
-            margin-top: 10px;
-            letter-spacing: 1px;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-top: 8px;
+            animation: bounceIn 0.5s ease;
         }
 
-        .result-badge.pass-text {
-            color: var(--accent-green);
-        }
+        .pass-text { color: var(--pass-green); }
+        .fail-text { color: var(--fail-red); }
 
-        .result-badge.fail-text {
-            color: var(--accent-red);
-        }
-
-        .metrics-table {
+        .data-table {
             width: 100%;
-            margin-top: 20px;
             border-collapse: collapse;
             font-size: 0.88rem;
         }
 
-        .metrics-table td {
+        .data-table td {
             padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-muted);
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-dim);
         }
 
-        .metrics-table td:last-child {
+        .data-table td:last-child {
             text-align: right;
-            color: var(--text-main);
+            color: var(--text-light);
             font-weight: 600;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
+        .error-alert {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--fail-red);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
         }
 
-        /* Keyframe Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+        .placeholder-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes pulseGlow {
-            from { box-shadow: 0 0 10px rgba(99, 102, 241, 0.1); }
-            to { box-shadow: 0 0 20px rgba(99, 102, 241, 0.25); }
+        @keyframes bounceIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
+<div class="dashboard-container">
+    <div class="header-title">
         <h1>🎓 Student Performance Dashboard</h1>
-        <p>Support Vector Machine (SVC) Predictive Analytics Engine</p>
+        <p>Support Vector Classifier (SVC) • Live AI Prediction Canvas</p>
     </div>
 
     <div class="grid-layout">
-        <!-- Input Form Card -->
-        <div class="glass-card">
-            <div class="card-title">📝 Student Metrics Input</div>
+        <!-- Input Form Pane -->
+        <div class="glass-panel">
+            <div class="panel-title">⚙️ Student Evaluation Features</div>
+            
             <form method="POST" action="/">
-                <div class="form-grid">
+                <div class="input-grid">
                     <div class="form-group">
                         <label for="gender">Gender</label>
                         <select name="gender" id="gender">
@@ -288,12 +298,12 @@ HTML_TEMPLATE = """
                     </div>
 
                     <div class="form-group">
-                        <label for="study_hours">Weekly Study Hours</label>
-                        <input type="number" step="0.1" name="study_hours" id="study_hours" min="0" max="80" value="{{ inputs['study_hours'] if inputs else 15 }}" required>
+                        <label for="study_hours">Study Hours / Wk</label>
+                        <input type="number" step="0.1" name="study_hours" id="study_hours" min="0" max="100" value="{{ inputs['study_hours'] if inputs else 15 }}" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="attendance">Attendance Rate (%)</label>
+                        <label for="attendance">Attendance (%)</label>
                         <input type="number" step="0.1" name="attendance" id="attendance" min="0" max="100" value="{{ inputs['attendance'] if inputs else 85 }}" required>
                     </div>
 
@@ -329,37 +339,44 @@ HTML_TEMPLATE = """
                     </div>
 
                     <div class="form-group full-width">
-                        <label for="final_score">Final Score</label>
+                        <label for="final_score">Final Exam Score</label>
                         <input type="number" step="0.1" name="final_score" id="final_score" min="0" max="100" value="{{ inputs['final_score'] if inputs else 75 }}" required>
                     </div>
 
-                    <button type="submit" class="submit-btn">🚀 Predict Outcome</button>
+                    <button type="submit" class="btn-submit">⚡ RUN MODEL PREDICTION</button>
                 </div>
             </form>
         </div>
 
-        <!-- Evaluation Results Card -->
-        <div class="glass-card">
-            <div class="card-title">📊 Real-Time Classification</div>
+        <!-- Output Analytics Pane -->
+        <div class="glass-panel">
+            <div class="panel-title">📊 Analytics & Outcome</div>
+
+            {% if error_msg %}
+                <div class="error-alert">
+                    ⚠️ <strong>Error:</strong> {{ error_msg }}
+                </div>
+            {% endif %}
 
             {% if prediction is not none %}
                 {% set is_pass = prediction|string|lower in ['yes', '1', 'pass'] %}
-                <div class="result-tile {{ 'pass' if is_pass else 'fail' }}">
-                    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">
-                        Predicted Outcome
+                
+                <div class="result-box {{ 'pass-style' if is_pass else 'fail-style' }}">
+                    <div style="font-size: 0.8rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase;">
+                        Predicted Outcome Result
                     </div>
-                    <div class="result-badge {{ 'pass-text' if is_pass else 'fail-text' }}">
+                    <div class="badge-text {{ 'pass-text' if is_pass else 'fail-text' }}">
                         {{ '🎉 ' if is_pass else '⚠️ ' }}{{ prediction }}
                     </div>
                 </div>
 
-                <table class="metrics-table">
+                <table class="data-table">
                     <tr>
-                        <td>Study Time</td>
-                        <td>{{ inputs['study_hours'] }} hrs/wk</td>
+                        <td>Study Effort</td>
+                        <td>{{ inputs['study_hours'] }} hrs / week</td>
                     </tr>
                     <tr>
-                        <td>Attendance</td>
+                        <td>Attendance Rate</td>
                         <td>{{ inputs['attendance'] }}%</td>
                     </tr>
                     <tr>
@@ -372,8 +389,11 @@ HTML_TEMPLATE = """
                     </tr>
                 </table>
             {% else %}
-                <div class="empty-state">
-                    <p>⚡ Adjust parameters and click <strong>Predict Outcome</strong> to evaluate student performance in real-time.</p>
+                <div class="placeholder-state">
+                    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--text-dim); margin-bottom: 12px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+                    </svg>
+                    <p>Set values on the left panel and click <strong>RUN MODEL PREDICTION</strong> to compute real-time student outcomes.</p>
                 </div>
             {% endif %}
         </div>
@@ -388,18 +408,20 @@ HTML_TEMPLATE = """
 def index():
     prediction = None
     inputs = None
+    error_msg = None
 
     if request.method == "POST":
         try:
-            gender = int(request.form.get("gender"))
-            age = float(request.form.get("age"))
-            study_hours = float(request.form.get("study_hours"))
-            attendance = float(request.form.get("attendance"))
-            parent_education = int(request.form.get("parent_education"))
-            internet_access = int(request.form.get("internet_access"))
-            extracurricular = int(request.form.get("extracurricular"))
-            previous_score = float(request.form.get("previous_score"))
-            final_score = float(request.form.get("final_score"))
+            # Extract form values cleanly with direct type coercion
+            gender = int(request.form.get("gender", 1))
+            age = float(request.form.get("age", 18))
+            study_hours = float(request.form.get("study_hours", 15))
+            attendance = float(request.form.get("attendance", 85))
+            parent_education = int(request.form.get("parent_education", 1))
+            internet_access = int(request.form.get("internet_access", 1))
+            extracurricular = int(request.form.get("extracurricular", 1))
+            previous_score = float(request.form.get("previous_score", 70))
+            final_score = float(request.form.get("final_score", 75))
 
             inputs = {
                 "gender": gender,
@@ -413,25 +435,30 @@ def index():
                 "final_score": final_score
             }
 
-            if model:
-                # 9 feature order extracted from model.pkl
+            if model is not None:
+                # Feature array order matching SVC model:
+                # [gender, age, study_hours_per_week, attendance_rate, parent_education, internet_access, extracurricular, previous_score, final_score]
                 feature_matrix = np.array([[
                     gender, age, study_hours, attendance, parent_education,
                     internet_access, extracurricular, previous_score, final_score
-                ]])
-                prediction = model.predict(feature_matrix)[0]
+                ]], dtype=object)
+
+                pred_raw = model.predict(feature_matrix)[0]
+                prediction = str(pred_raw)
+            else:
+                error_msg = "Model file ('model.pkl') is not loaded properly on the server."
 
         except Exception as e:
-            print(f"Error during model evaluation: {e}")
+            error_msg = f"Failed to execute prediction: {str(e)}"
 
-    return render_template_string(HTML_TEMPLATE, prediction=prediction, inputs=inputs)
+    return render_template_string(HTML_TEMPLATE, prediction=prediction, inputs=inputs, error_msg=error_msg)
 
 @app.route("/predict", methods=["POST"])
 def predict_api():
-    if not model:
-        return jsonify({"error": "Model missing or not loaded"}), 500
+    if model is None:
+        return jsonify({"error": "Model binary not found on server"}), 500
     try:
-        data = request.json
+        data = request.get_json(force=True)
         features = np.array([[
             int(data["gender"]),
             float(data["age"]),
@@ -442,9 +469,10 @@ def predict_api():
             int(data["extracurricular"]),
             float(data["previous_score"]),
             float(data["final_score"])
-        ]])
-        prediction = model.predict(features)[0]
-        return jsonify({"prediction": str(prediction)})
+        ]], dtype=object)
+        
+        pred = model.predict(features)[0]
+        return jsonify({"prediction": str(pred)})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
